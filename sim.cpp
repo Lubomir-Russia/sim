@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+#include <unistd.h>
 #include <string>
 #include <vector>
 #include <algorithm> // for copy
@@ -20,7 +22,7 @@ static void show_usage(string name)
 
 int main(int argc, char* argv[])
 {
-    if (argc < 1) {
+    if (argc < 2) {
         show_usage(argv[0]);
         return 1;
     }
@@ -64,4 +66,22 @@ int main(int argc, char* argv[])
         cout << "Action is delete" << endl;
     }
     copy(alarms.begin(), alarms.end(), ostream_iterator<string>(cout, " "));
+    string page = "Ok";
+    if (action == "add") {
+        ofstream myfile;
+        myfile.open ("report.html");
+        myfile << "<!DOCTYPE html><html><head></head><body>"; //starting html
+
+        //add some html content
+        //as an example: if you have array of objects featuring the properties name & value, you can print out a new line for each property pairs like this:
+        // for (int i=0; i< alarms.length(); i++)
+        for (vector<string>::iterator i = alarms.begin(); i != alarms.end(); ++i)
+            myfile << "<p><span style='font-weight: bold'>" << *i << "</span><span>" << "10019" << "</span></p>";
+
+        //ending html
+        myfile << "</body></html>";
+        myfile.close();
+        string name = getlogin();
+        cout << endl << name << endl << page;
+    }
 }
