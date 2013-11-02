@@ -67,9 +67,33 @@ int main(int argc, char* argv[])
     }
     copy(alarms.begin(), alarms.end(), ostream_iterator<string>(cout, " "));
     string page = "Ok";
+    string report_name = "report";
+    string user_name = getlogin();
+    cout << "User name is: " << user_name << endl;
+    char arcString [32];
+    string strTmp;
+
+    // add start-date/start-time
+
+    time_t rawtime;
+    struct tm * timeinfo;
+
+    time (&rawtime);
+    timeinfo = localtime (&rawtime);
+
+    if (strftime (&(arcString [0]), 20, "%Y-%m-%d_%H-%M-%S", timeinfo) != 0)
+    {
+        strTmp = (char*) &(arcString [0]);
+    }
+    else
+    {
+        strTmp = "1970-01-01_00-00-00";
+    }
+    report_name += "_" + strTmp + "_" + user_name + ".html";
+    cout << report_name << endl;
     if (action == "add") {
         ofstream myfile;
-        myfile.open ("report.html");
+        myfile.open (report_name.c_str());
         myfile << "<!DOCTYPE html><html><head></head><body>"; //starting html
 
         //add some html content
