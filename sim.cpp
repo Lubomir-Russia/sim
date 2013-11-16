@@ -20,6 +20,32 @@ static void show_usage(string name)
          << endl;
 }
 
+string getEnvVar(string const & key)
+{
+    char * val = getenv( key.c_str() );
+    return val == NULL ? string("") : string(val);
+}
+
+string getTimeStamp() {
+
+    time_t rawtime;
+    struct tm * timeinfo;
+
+    time (&rawtime);
+    timeinfo = localtime (&rawtime);
+    char arcString [32];
+    string time_stamp;
+
+    if (strftime (&(arcString [0]), 20, "%Y-%m-%d_%H-%M-%S", timeinfo) != 0)
+    {
+        return time_stamp = (char*) &(arcString [0]);
+    }
+    else
+    {
+        return time_stamp = "1970-01-01_00-00-00";
+    }
+}
+
 int main(int argc, char* argv[])
 {
     if (argc < 2) {
@@ -43,7 +69,7 @@ int main(int argc, char* argv[])
             } else {
                 cerr << "--add option requires at least one alarm_id." << endl;
                 return 1;
-            }  
+            }
         } else if ((arg == "-d") || (arg == "--delete")) {
             if (i + 1 < argc) { // Make sure we aren't at the end of argv!
                 action = "delete";
@@ -54,58 +80,60 @@ int main(int argc, char* argv[])
             } else {
                 cerr << "--delete option requires at least one alarm_id." << endl;
                 return 1;
-            }  
+            }
         } else {
             cerr << "Option " << argv[i] << " is unknown. Use -h for usage." << endl;
         }
     }
+
     if (action == "add") {
-        cout << "Action is add" << endl;
+        cout << "Action:\t\tadd" << endl;
     }
     if (action == "delete") {
-        cout << "Action is delete" << endl;
+        cout << "Action:\t\tdelete" << endl;
     }
-    copy(alarms.begin(), alarms.end(), ostream_iterator<string>(cout, " "));
-    string page = "Ok";
-    string report_name = "report";
+
     string user_name = getlogin();
-    cout << "User name is: " << user_name << endl;
-    char arcString [32];
-    string strTmp;
+    cout << "User name:\t" << user_name << endl;
 
-    // add start-date/start-time
+    cout << "Alarms:\t\t";
+    copy(alarms.begin(), alarms.end(), ostream_iterator<string>(cout, ", "));
+    cout << endl;
 
-    time_t rawtime;
-    struct tm * timeinfo;
+    string time_stamp = getTimeStamp();
+    string report_name = "report_" + time_stamp + "_" + user_name + ".html";
+    cout << "Report name:\t" << report_name << endl;
 
-    time (&rawtime);
-    timeinfo = localtime (&rawtime);
-
-    if (strftime (&(arcString [0]), 20, "%Y-%m-%d_%H-%M-%S", timeinfo) != 0)
-    {
-        strTmp = (char*) &(arcString [0]);
+    string enna_path = getEnvVar("ENNA_PATH");
+    if (enna_path == "") {
+        cout << "Env variable $ENNA_PATH is not set. Current Working dir will be used used" << endl;
     }
-    else
-    {
-        strTmp = "1970-01-01_00-00-00";
+    else {
+        enna_path +="/";
+        cout << "ENNA path:\t" << enna_path << endl;
     }
-    report_name += "_" + strTmp + "_" + user_name + ".html";
-    cout << report_name << endl;
+
+    string report_full_name = enna_path + report_name;
+    cout << "Report full name:\t" << report_full_name << endl;
+
+    string page = "Ok";
     if (action == "add") {
         ofstream myfile;
-        myfile.open (report_name.c_str());
-        myfile << "<!DOCTYPE html><html><head></head><body>"; //starting html
+        myfile.open (report_full_name.c_str());
+        myfile << "<!DOCTYPE html>\n<html>\n<head></head>\n<body>\n"; //starting html
 
         //add some html content
         //as an example: if you have array of objects featuring the properties name & value, you can print out a new line for each property pairs like this:
         // for (int i=0; i< alarms.length(); i++)
         for (vector<string>::iterator i = alarms.begin(); i != alarms.end(); ++i)
-            myfile << "<p><span style='font-weight: bold'>" << *i << "</span><span>" << "10019" << "</span></p>";
+            myfile << "\n\t<p>Alarm class: <b>" << *i << "</b> "
+                   << "imported by <i>" << user_name << "</i> "
+                   << "at " << time_stamp ;
 
         //ending html
-        myfile << "</body></html>";
+        myfile << "\n</body>\n</html>";
         myfile.close();
         string name = getlogin();
-        cout << endl << name << endl << page;
+        cout << endl << page << endl;
     }
 }
