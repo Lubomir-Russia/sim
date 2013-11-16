@@ -1,0 +1,126 @@
+#!/bin/bash
+#
+#     Template SUSE system startup script for example service/daemon FOO
+#     Copyright (C) 1995--2005  Kurt Garloff, SUSE / Novell Inc.
+#          
+# /etc/init.d/FOO
+#   and its symbolic link
+# /(usr/)sbin/rcFOO
+#
+# Template system startup script for some example service/daemon FOO
+#
+# LSB compatible service control script; see http://www.linuxbase.org/spec/
+# 
+# Note: This template uses functions rc_XXX defined in /etc/rc.status on
+# UnitedLinux/SUSE/Novell based Linux distributions. If you want to base your
+# script on this template and ensure that it works on non UL based LSB 
+# compliant Linux distributions, you either have to provide the rc.status
+# functions from UL or change the script to work without them.
+# See skeleton.compat for a template that works with other distros as well.
+#
+### BEGIN INIT INFO
+# Provides:          enna
+# Default-Start:     3 5
+# Default-Stop:      0 1 2 6
+# Short-Description: Starts enna on various ports
+# Description:       Starts enna server on specified ports
+### END INIT INFO
+# 
+# Note on runlevels:
+# 0 - halt/poweroff 			6 - reboot
+# 1 - single user			2 - multiuser without network exported
+# 3 - multiuser w/ network (text mode)  5 - multiuser w/ network and X11 (xdm)
+# 
+
+
+# Check for missing binaries (stale symlinks should not happen)
+# Note: Special treatment of stop for LSB conformance
+test -z $ENNA_PATH && { echo "ENNA_PATH is not set."; 
+	if [ "$1" = "stop" ]; then exit 0;
+	else exit 5; fi; }
+
+test -d $ENNA_PATH || { echo "ENNA is not installed in $ENNA_PATH"; 
+	if [ "$1" = "stop" ]; then exit 0;
+	else exit 5; fi; }
+
+# Return values acc. to LSB for all commands but status:
+# 0	  - success
+# 1       - generic or unspecified error
+# 2       - invalid or excess argument(s)
+# 3       - unimplemented feature (e.g. "reload")
+# 4       - user had insufficient privileges
+# 5       - program is not installed
+# 6       - program is not configured
+# 7       - program is not running
+# 8--199  - reserved (8--99 LSB, 100--149 distrib, 150--199 appl)
+# 
+
+if [[ $2 -gt 0 ]] ; then ENNA_PORT=$2; fi  
+
+case "$1" in
+    start)
+	echo "Starting ENNA server "
+    echo "ENNA_USER:    ${ENNA_USER:?}"
+    echo "ENNA_PORT:    ${ENNA_PORT:?}"
+    echo "ENNA_PATH:    ${ENNA_PATH:?}"
+
+    sudo -u $ENNA_USER bash << EOF
+cd $ENNA_PATH
+nohup python -m SimpleHTTPServer $ENNA_PORT > /dev/null 2>&1 &
+EOF
+    sleep 1
+    echo
+    $0 status
+
+	;;
+
+    stop)
+	echo "Shutting down ENNA "
+    echo "ENNA_USER:    ${ENNA_USER:?}"
+    echo "ENNA_PORT:    ${ENNA_PORT:?}"
+    enna_pid=`ps -ef | awk '/SimpleHTTPServer '$ENNA_PORT'/ && !/awk/ {print $2}'`
+    echo $enna_pid
+    if [[ -z $enna_pid ]] ; then
+        echo "ENNA is not found on port $ENNA_PORT"
+        exit 1
+    else
+        sudo -u $ENNA_USER kill -9 $enna_pid
+        enna_pid=`ps -ef | awk '/SimpleHTTPServer '$ENNA_PORT'/ && !/awk/ {print $2}'`
+        echo $enna_pid
+        if [[ -z $enna_pid ]] ; then
+            echo "ENNA that used to run on port $ENNA_PORT is killed."
+            exit 0
+        else
+            echo "ENNA that runs on port $ENNA_PORT survived the kill."
+            exit 1
+        fi
+    fi
+	;;
+
+    restart)
+	## Stop the service and regardless of whether it was
+	## running or not, start it again.
+	$0 stop
+	$0 start
+	;;
+
+    status)
+	echo "Checking for service ENNA "
+    echo "ENNA_USER:    ${ENNA_USER:?}"
+    echo "ENNA_PORT:    ${ENNA_PORT:?}"
+    if [[ `ps -u enna -ef | grep "SimpleHTTPServer $ENNA_PORT" | grep -v grep` ]] ; then
+        echo;
+        echo "ENNA is running at http://"`hostname  -I | cut -f1 -d' '`":$ENNA_PORT"
+        exit 0;
+    else
+        echo;
+        echo "ENNA is not running at http://"`hostname  -I | cut -f1 -d' '`":$ENNA_PORT"
+        exit 1;
+    fi
+	;;
+
+    *)
+	echo "Usage: $0 {start|stop|status|restart} [port]"
+	exit 1
+	;;
+esac
