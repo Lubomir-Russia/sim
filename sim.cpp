@@ -20,13 +20,8 @@ static void show_usage(string name)
          << endl;
 }
 
-string getEnvVar(string const & key)
+string getTimeStamp()
 {
-    char * val = getenv( key.c_str() );
-    return val == NULL ? string("") : string(val);
-}
-
-string getTimeStamp() {
 
     time_t rawtime;
     struct tm * timeinfo;
@@ -44,6 +39,25 @@ string getTimeStamp() {
     {
         return time_stamp = "1970-01-01_00-00-00";
     }
+}
+
+string getEnvVar(string const & key)
+{
+    char * val = getenv( key.c_str() );
+    return val == NULL ? string("") : string(val);
+}
+
+string getAbsPath(string const & key)
+{
+    string path = getEnvVar(key);
+    if (path == "") {
+        cout << "Env variable $" << key << " is not set. Current Working dir will be used used" << endl;
+    }
+    else {
+        path +="/";
+        cout << key << " path:\t" << path << endl;
+    }
+    return path;
 }
 
 int main(int argc, char* argv[])
@@ -104,21 +118,48 @@ int main(int argc, char* argv[])
     string report_name = "report_" + time_stamp + "_" + user_name + ".html";
     cout << "Report name:\t" << report_name << endl;
 
-    string enna_path = getEnvVar("ENNA_PATH");
-    if (enna_path == "") {
-        cout << "Env variable $ENNA_PATH is not set. Current Working dir will be used used" << endl;
-    }
-    else {
-        enna_path +="/";
-        cout << "ENNA path:\t" << enna_path << endl;
-    }
+    string enna_path = getAbsPath("ENNA_PATH");
+    string report_path = getAbsPath("ENNA_REPORTS");
 
-    string report_full_name = enna_path + report_name;
+    string report_full_name = report_path + report_name;
     cout << "Report full name:\t" << report_full_name << endl;
 
     string page = "Ok";
     if (action == "add") {
+        // create alarm files
         ofstream myfile;
+        srand ( time(NULL) );
+        string help_abs_dir = getEnvVar("ENNA_HELP");
+        string help_rel_dir = help_abs_dir.substr(help_abs_dir.find_last_of("\\/"));
+        for (vector<string>::iterator i = alarms.begin(); i != alarms.end(); ++i) {
+            int image_number = rand() % 22 + 1;
+            // string image_file = str( format("Alarm_%1\.jpg") % image_number;
+            char buff[100];
+            sprintf(buff, "Alarm_%02d.jpg", image_number);
+            string image_file = buff;
+            string image_rel_path = help_rel_dir + "\\" + image_file;
+            string alarm_full_name = enna_path + "alarm_" +*i + ".html";
+            myfile.open (alarm_full_name.c_str());
+            myfile << "<!DOCTYPE html>\n<html>\n<head></head>\n<body>\n"; //starting html
+            myfile << "\n\t<font size=\"7\" color=\"#ff0033\">Alarm class: <b>" << *i << "</b></font><p>"
+                   << "\n\t<p>Generated at " << time_stamp
+                   << "\n\t<p>Upploaded by <i>" << user_name << "</i>"
+                   << "\n\t<p><p>"
+                   << "\n\t<img src=\"" << image_rel_path << "\" width=\"180\" height=\"160\" border=\"0\" alt=\"\">"
+                   << "\n\t<p>" 
+                   << "\n\t <hr><font size=\"5\" color=\"#990000\">" 
+                   << "\n\t<script>"
+                   << "\n\t  document.write('<a href=\"' + document.referrer + '\">Go back.</a>');" 
+                   << "\n\t</script>"
+                   << "\n\t<a href=\"/\">Main Page</a></font>"
+                   ;
+            //ending html
+            myfile << "\n</body>\n</html>";
+            myfile.close();
+        }
+
+
+        // create report file
         myfile.open (report_full_name.c_str());
         myfile << "<!DOCTYPE html>\n<html>\n<head></head>\n<body>\n"; //starting html
 
@@ -130,6 +171,13 @@ int main(int argc, char* argv[])
                    << "imported by <i>" << user_name << "</i> "
                    << "at " << time_stamp ;
 
+        myfile  << "\n\t<p>" 
+                << "\n\t <hr><font size=\"5\" color=\"#990000\">" 
+                << "\n\t<script>"
+                << "\n\t  document.write('<a href=\"' + document.referrer + '\">Go back.</a>');" 
+                << "\n\t</script>"
+                << "\n\t<a href=\"/\">Main Page</a></font>"
+                ;
         //ending html
         myfile << "\n</body>\n</html>";
         myfile.close();

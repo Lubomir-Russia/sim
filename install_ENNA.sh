@@ -15,7 +15,9 @@ fi
 echo "ENNA_USER:    ${ENNA_USER:?}"
 echo "ENNA_PORT:    ${ENNA_PORT:?}"
 echo "ENNA_PATH:    ${ENNA_PATH:?}"
+echo "ENNA_HELP:    ${ENNA_HELP:?}"
 echo "ENNA_ARCHIVE: ${ENNA_ARCHIVE:?}"
+echo "ENNA_REPORTS: ${ENNA_REPORTS:?}"
 
 if ! id -u $ENNA_USER > /dev/null 2>&1; then
     # add user without home dir
@@ -23,12 +25,22 @@ if ! id -u $ENNA_USER > /dev/null 2>&1; then
 fi
 
 [ -d $ENNA_PATH ] || mkdir -p $ENNA_PATH
-chown $ENNA_USER:$ENNA_USER $ENNA_PATH
+[ -d $ENNA_HELP ] || mkdir -p $ENNA_HELP
+[ -d $ENNA_ARCHIVE ] || mkdir $ENNA_ARCHIVE
+[ -d $ENNA_REPORTS ] || mkdir $ENNA_REPORTS
+
+cp HELP/*.jpg $ENNA_HELP
+cp Help_for_ENNA.html $ENNA_HELP/index.html
+cp _MAIN_PAGE_.html $ENNA_ARCHIVE
+cp _MAIN_PAGE_.html $ENNA_REPORTS
+
+
+chown --recursive $ENNA_USER:$ENNA_USER $ENNA_PATH
 
 sudo -u $ENNA_USER bash << EOF
-[ -d $ENNA_ARCHIVE ] || mkdir $ENNA_ARCHIVE
-cp Help_for_ENNA.html $ENNA_PATH
 cd $ENNA_PATH
+chmod 777 $ENNA_PATH $ENNA_ARCHIVE $ENNA_REPORTS
+chmod 700 $ENNA_HELP
 nohup python -m SimpleHTTPServer $ENNA_PORT > /dev/null 2>&1 &
 EOF
 
