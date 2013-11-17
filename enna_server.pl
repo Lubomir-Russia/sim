@@ -3,6 +3,8 @@ use strict;
 use warnings;
 use IO::Socket::INET;
 use XML::Parser;
+use XML::Simple;
+use Data::Dumper;
  
 # auto-flush on socket
 $| = 1;
@@ -30,12 +32,12 @@ while(1)
  
     # read up to 1024 characters from the connected client
     my $request = "";
-    $client_socket->recv($request, 1024);
-    print "received data: $request\n";
+    my $size = $client_socket->recv($request, 1024);
+    print "received data of size $size:\n$request\n";
  
     # initialize parser object and parse the string
-    my $parser = XML::Parser->new( ErrorContext => 2 );
-    eval { $parser->parse($request); };
+    my $request_parsed = "Not Parsed";
+    eval { $request_parsed = XMLin($request, ForceArray => ['alarms']); };
 
     # report any error that stopped parsing, or announce success
     my $response = '';
@@ -46,12 +48,14 @@ while(1)
         $response = "request is well-formed\n";
     }
     print STDERR "\n$response";
+    print Dumper($request_parsed);
 
     # write response data to the connected client
+    $client_socket->send('Very well');
     $client_socket->send($response);
  
     # notify client that response has been sent
-    shutdown($client_socket, 1);
+    # shutdown($client_socket, 1);
 }
  
 $socket->close();
