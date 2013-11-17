@@ -1,0 +1,4 @@
+sudo apt-get install expat libxml-sax-expat-incremental-perl
+
+cpan install XML::Simple 
+# XML::Simple will also intall XML::Parser
