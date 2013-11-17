@@ -78,14 +78,14 @@ EOF
 	echo "Shutting down ENNA "
     echo "ENNA_USER:    ${ENNA_USER:?}"
     echo "ENNA_PORT:    ${ENNA_PORT:?}"
-    enna_pid=`ps -ef | awk '/SimpleHTTPServer '$ENNA_PORT'/ && !/awk/ {print $2}'`
+    enna_pid=`ps -ef | awk '/SimpleHTTPServer '$ENNA_PORT'$/ && !/awk/ {print $2}'`
     echo $enna_pid
     if [[ -z $enna_pid ]] ; then
         echo "ENNA is not found on port $ENNA_PORT"
         exit 1
     else
         sudo -u $ENNA_USER kill -9 $enna_pid
-        enna_pid=`ps -ef | awk '/SimpleHTTPServer '$ENNA_PORT'/ && !/awk/ {print $2}'`
+        enna_pid=`ps -ef | awk '/SimpleHTTPServer '$ENNA_PORT'$/ && !/awk/ {print $2}'`
         echo $enna_pid
         if [[ -z $enna_pid ]] ; then
             echo "ENNA that used to run on port $ENNA_PORT is killed."
@@ -108,7 +108,7 @@ EOF
 	echo "Checking for service ENNA "
     echo "ENNA_USER:    ${ENNA_USER:?}"
     echo "ENNA_PORT:    ${ENNA_PORT:?}"
-    if [[ `ps -u enna -ef | grep "SimpleHTTPServer $ENNA_PORT" | grep -v grep` ]] ; then
+    if [[ `ps -u enna -ef | grep "SimpleHTTPServer $ENNA_PORT$" | grep -v grep` ]] ; then
         echo;
         echo "ENNA is running at http://"`hostname  -I | cut -f1 -d' '`":$ENNA_PORT"
         exit 0;
